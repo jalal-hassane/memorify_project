@@ -58,33 +58,28 @@ def validate_headers(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         m_headers = ['app-version', 'device-id', 'device-type']
-        print("ARGS",args)
+        print("ARGS", args)
         headers = args[0].headers
         print("HEADERS12", headers)
-        has_empty_fields = False
         if not headers:
             return response_fail('Headers fields are all missing')
         for h in m_headers:
             if h not in headers.keys():
                 return response_fail('Missing fields: ' + h)
-        print("has empty fields", has_empty_fields)
-        if not has_empty_fields:
-            old: QuerySet = Device.objects.filter(device_id=headers.get('device-id'))
-            print("Old device", old)
-            if old:
-                device = old.first()
-                old.app_version = headers.get('version')
-            else:
-                device = Device(
-                    device_id=headers.get('device-id'),
-                    type=headers.get('device-type'),
-                    app_version=headers.get('version')
-                )
-            print("DEVICE", device)
-            device.save()
-            return func(*args)
+        old: QuerySet = Device.objects.filter(device_id=headers.get('device-id'))
+        print("Old device", old)
+        if old:
+            device = old.first()
+            old.app_version = headers.get('version')
         else:
-            return response_fail("Error")
+            device = Device(
+                device_id=headers.get('device-id'),
+                type=headers.get('device-type'),
+                app_version=headers.get('version')
+            )
+        print("DEVICE", device)
+        device.save()
+        return func(*args)
 
     return wrapper
 

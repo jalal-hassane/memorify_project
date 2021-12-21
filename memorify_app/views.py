@@ -59,7 +59,7 @@ def validate_headers(func):
     def wrapper(*args, **kwargs):
         m_headers = ['app-version', 'device-id', 'device-type']
         print("ARGS",args)
-        headers = {}
+        headers = args[0].headers
         print("HEADERS12", headers)
         has_empty_fields = False
         if not headers:

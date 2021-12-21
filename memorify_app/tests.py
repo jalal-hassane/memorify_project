@@ -1,6 +1,9 @@
 # Create your tests here.
 import functools
+import random
+import string
 import time
+import uuid
 from unittest import TestCase
 
 
@@ -118,3 +121,10 @@ class Tests(TestCase):
         print("object2", Circle.circle_factory())
         print("pi", Circle.pi())
         assert (1 == 1)
+
+    def test_auth(self):
+        r1 = random.randint(0, 99)
+        r2 = random.randint(0, 99)
+        res = (''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase) for _ in range(20)))
+        ress = "{:02d}:{:02d}:{}".format(r1, r2, res)
+        print("auth", ress)

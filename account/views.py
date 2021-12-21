@@ -9,7 +9,7 @@ from memorify_app.views import *
 
 
 # {country_code} needed here
-@validate_headers
+@validate_headers()
 def app_settings(request):
     country_code = request.GET.get("country_code")
     if not country_code:
@@ -35,7 +35,7 @@ def update_profile(request):
 
 
 # todo send required body fields to validation decorator
-@validate_auth_token
+@validate_headers(kwargs_=['auth-token'])
 @validate_body_fields([''])
 def checkin(request):
     # auth token is valid, proceeding

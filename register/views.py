@@ -88,7 +88,7 @@ class TestBody:
 
 
 @csrf_exempt  # bypass validation for now
-@validate_auth_token
+@validate_headers(kwargs_=['auth-token'])
 @validate_body_fields(['test_key', 'key_2', 'key_3'])
 @require_POST
 # @csrf_protect

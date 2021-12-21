@@ -54,34 +54,70 @@ def generate_auth_token(self):
     return auth
 
 
-def validate_headers(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        m_headers = ['app-version', 'device-id', 'device-type']
-        print("ARGS", args)
-        headers = args[0].headers
-        print("HEADERS12", headers)
-        if not headers:
-            return response_fail('Headers fields are all missing')
-        for h in m_headers:
-            if h not in headers.keys():
-                return response_fail('Missing fields: ' + h)
-        old: QuerySet = Device.objects.filter(device_id=headers.get('device-id'))
-        print("Old device", old)
-        if old:
-            device = old.first()
-            old.app_version = headers.get('version')
+# validate existing auth token, otherwise assign the auth token to the existing device
+def validate_auth_token(auth, device_id):
+    print("AUTH to validate", auth)
+    print("Device to validate", device_id)
+    old: QuerySet = Device.objects.filter(device_id=device_id)
+    if old:
+        print("OLD:::", old)
+        device = old.first()
+        if not device.auth_token:
+            print("not device.auth_token:::", device.auth_token)
+            device.auth_token = auth
+            device.save()
+            return None
         else:
-            device = Device(
-                device_id=headers.get('device-id'),
-                type=headers.get('device-type'),
-                app_version=headers.get('version')
-            )
-        print("DEVICE", device)
-        device.save()
-        return func(*args)
+            # device has an auth token, checking for match
+            print("device.auth_token:::", device.auth_token)
+            if device.auth_token != auth:
+                print("device.auth_token != auth:::", device.auth_token)
+                return auth_token_not_valid
+            else:
+                return None
+    else:
+        return device_not_exist
 
-    return wrapper
+
+def validate_headers(*args_, **kwargs_):
+    def inner_function(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            m_headers = ['app-version', 'device-id', 'device-type']
+            if kwargs_:
+                for arg in kwargs_['kwargs_']:
+                    m_headers.append(arg)
+            print("ARGS", args)
+            print("M_HEADERS", m_headers)
+            headers = args[0].headers
+            print("HEADERS12", headers)
+            if not headers:
+                return response_fail('Headers fields are all missing')
+            for h in m_headers:
+                if h not in headers.keys() or not headers.get(h):
+                    return response_fail('Missing fields: ' + h)
+            auth = headers.get('auth-token')
+            d_id = headers.get('device-id')
+            if validate_auth_token(auth, d_id):
+                return response_fail(validate_auth_token(auth, d_id))
+            old: QuerySet = Device.objects.filter(device_id=d_id)
+            print("Old device", old)
+            if old:
+                device = old.first()
+                old.app_version = headers.get('app-version')
+            else:
+                device = Device(
+                    device_id=d_id,
+                    type=headers.get('device-type'),
+                    app_version=headers.get('app-version')
+                )
+            print("DEVICE", device)
+            device.save()
+            return func(*args)
+
+        return wrapper
+
+    return inner_function
 
 
 def validate_body_fields(*args_, **kwargs_):
@@ -99,34 +135,3 @@ def validate_body_fields(*args_, **kwargs_):
         return wrapper
 
     return inner_function
-
-
-# validate existing auth token, otherwise assign the auth token to the existing device
-# todo validate headers
-# @validate_headers
-def validate_auth_token(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        headers = args[0].headers
-        print("HHH", headers)
-        auth = headers.get("auth-token")
-        if not auth:
-            return response_fail(auth_token_required)
-        old: QuerySet = Device.objects.filter(device_id=headers.get('device-id'))
-        if old:
-            device = old.first()
-            if not device.auth_token:
-                device.auth_token = auth
-                device.save()
-                return func(*args)
-            else:
-                # device has an auth token, checking for match
-                if device.auth_token != auth:
-                    return response_fail(auth_token_not_valid)
-                else:
-                    # all good, return None for proceeding with api
-                    return func(*args)
-        else:
-            return response_fail(device_not_exist)
-
-    return wrapper

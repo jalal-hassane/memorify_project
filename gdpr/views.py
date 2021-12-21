@@ -5,7 +5,7 @@ from memorify_app.models import GdprPopup, Device
 from memorify_app.views import response_ok, validate_headers, response_fail, country_code_required, device_not_exist
 
 
-@validate_headers
+@validate_headers()
 def get(request):
     # gdpr_popup collection has only one document
     country_code = request.GET.get("country_code")
@@ -25,7 +25,7 @@ def get(request):
     return response_ok(gdpr)
 
 
-@validate_headers
+@validate_headers()
 def accept(request):
     old = Device.objects.filter(device_id=request.headers.get('device-id'))
     if old:
@@ -33,7 +33,7 @@ def accept(request):
     return response_fail(device_not_exist)
 
 
-@validate_headers
+@validate_headers()
 def update(request):
     body = request.GET
     if not body:

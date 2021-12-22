@@ -95,7 +95,7 @@ def validate_headers(*args_, **kwargs_):
                 return response_fail('Headers fields are all missing')
             for h in m_headers:
                 if h not in headers.keys() or not headers.get(h):
-                    return response_fail('Missing fields: ' + h)
+                    return response_fail(f'Missing headers fields: {h}')
             auth = headers.get('auth-token')
             d_id = headers.get('device-id')
             if validate_auth_token(auth, d_id):
@@ -129,7 +129,7 @@ def validate_body_fields(*args_, **kwargs_):
                 return response_fail('Body fields are all missing')
             for k in args_[0]:
                 if not body.get(k):
-                    return response_fail('Missing fields: ' + k)
+                    return response_fail(f'Missing body fields: {k}')
             return func(*args)
 
         return wrapper

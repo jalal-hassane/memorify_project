@@ -16,6 +16,7 @@ class Device(document.Document):
     timezone_region = fields.StringField(default="")
     language = fields.StringField(default="")
     country_code = fields.StringField(default="")
+    device_token = fields.StringField(default="")
     is_rooted = fields.BooleanField(default=False)
     is_emulator = fields.BooleanField(default=False)
     # should be true if user has declined advertisement and support
@@ -187,6 +188,7 @@ class Profile(document.Document):
     public_id = fields.StringField()
     original_phone = fields.StringField()
     phone = fields.StringField()
+    password = fields.StringField()
     number_verified = fields.BooleanField()
     registration_ts = fields.DateTimeField()
     country = fields.DictField()

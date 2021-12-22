@@ -1,4 +1,5 @@
 import functools
+from datetime import datetime
 
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -9,9 +10,11 @@ from urllib.parse import urlparse
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
+from mongoengine import QuerySet
 
-from memorify_app.models import Profile
+from memorify_app.models import Profile, Device
 from memorify_app.views import validate_headers, response_fail, response_ok, validate_body_fields, validate_auth_token
+import phonenumbers
 
 NAME = "name"
 PHONE = "phone"
@@ -30,6 +33,31 @@ IS_ROOTED = "is_rooted"
 IS_EMULATOR = "is_emulator"
 COUNTRY_CODE = "country_code"
 VERIFICATION_CODE = "verification_code"
+registration_body_fields = [
+    "name",
+    "phone",
+    "password",
+    "verify_password",
+    "user_timezone",
+    "user_timezone_region",
+    "language",
+    "device_name",
+    "device_os_version",
+    "device_oem",
+    "mobile_carrier",
+    "app_store_version",
+    "is_rooted",
+    "is_emulator",
+    "country_code",
+    "verification_code",
+]
+
+
+def get_calling_code(iso):
+    for code, isos in phonenumbers.COUNTRY_CODE_TO_REGION_CODE.items():
+        if iso.upper() in isos:
+            return code
+    return None
 
 
 # RegisterRequest
@@ -87,24 +115,72 @@ class TestBody:
         return cls(body)
 
 
+def verify_code(code) -> bool:
+    return True
+
+
 @csrf_exempt  # bypass validation for now
 @validate_headers(kwargs_=['auth-token'])
-@validate_body_fields(['test_key', 'key_2', 'key_3'])
+@validate_body_fields(registration_body_fields)
 @require_POST
 # @csrf_protect
 def register(request):
-    print("REQUEST", request)
-    print("HEADERS", request.headers)
-    # fetching request body fields
     body = request.POST
-    print("body", body)
-    print("body keys", body.keys())
-    print("body values", body.values())
-    tbody = TestBody.to_test_body(body)
-    print("TestBody1", tbody.test_key)
-    print("TestBody2", tbody.key_2)
-    print("TestBody3", tbody.key_3)
-    print("test_key", body.get('test_key'))
+
+    profile = Profile()
+    profile.full_name = body.get(NAME)
+    profile.original_phone = body.get(PHONE)
+    obj = phonenumbers.parse('+' + str(get_calling_code(body.get(COUNTRY_CODE))) + profile.phone)
+    print("International", obj)
+    if not phonenumbers.is_possible_number(obj):
+        return response_fail("Phone number is not valid")
+    profile.number_verified = True
+    # todo get country based on country_code
+    profile.country = {
+        'iso_2': body.get(COUNTRY_CODE)
+    }
+    profile.password = body.get(PASSWORD)
+    if profile.password != body.get(VERIFY_PASSWORD):
+        return response_fail("Password does not match")
+    if body.get(IS_ROOTED) == 'True':
+        return response_fail("Rooted devices are not allowed to enter the app")
+    if body.get(IS_EMULATOR) == 'True':
+        return response_fail('Emulators are not allowed to enter the app')
+    if not verify_code(body.get(VERIFICATION_CODE)):
+        return response_fail("Verification code is not correct")
+    profile.registration_ts = datetime.now()
+    profile.language = body.get(LANGUAGE)
+    profile.is_active = True
+    profile.last_access_ts = datetime.now()
+    # todo if not empty verify email through firebase
+    profile.email = body.get("email")
+    profile.profile_image = ""
+    profile.master_contact = ""
+    profile.facebook_connected = False
+    profile.allowed_messages = 3
+
+    #  todo save device
+    old: QuerySet = Device.objects.filter(device_id=request.headers.get('device-id'))
+    if old:
+        device = old.first()
+        device.timezone = body.get(TIMEZONE)
+        device.timezone_region = body.get(TIMEZONE_REGION)
+        device.device_token = body.get(DEVICE_TOKEN)
+        device.model = body.get(DEVICE_NAME)
+        device.os_version = body.get(DEVICE_OS_VERSION)
+        device.manufacturer = body.get(DEVICE_OEM)
+        device.operator = body.get(MOBILE_CARRIER)
+        device.app_store_version = body.get(APP_STORE_VERSION)
+        device.app_version = request.headers.get('app-version')
+        device.is_rooted = body.get(IS_ROOTED)
+        device.is_emulator = body.get(IS_EMULATOR)
+        device.language = body.get(LANGUAGE)
+        device.save()
+
+    # todo return httpResponse
+    # create profile
+    # generate new auth token
+
     return response_ok({})
 
 

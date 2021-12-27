@@ -2,6 +2,7 @@ from mongoengine import document, fields
 
 
 # Create your models here.
+
 class Device(document.Document):
     device_id = fields.StringField(default="")
     auth_token = fields.StringField(default="")
@@ -179,6 +180,14 @@ class Country(document.Document):
     code = fields.StringField()
     iso_2 = fields.StringField()
 
+    def to_json(self):
+        return {
+            "flag_url": self.flag_url,
+            "name": self.name,
+            "code": self.code,
+            "iso_2": self.iso_2,
+        }
+
     def __str__(self):
         return "country"
 
@@ -191,7 +200,6 @@ class Profile(document.Document):
     password = fields.StringField()
     number_verified = fields.BooleanField()
     registration_ts = fields.DateTimeField()
-    country = fields.DictField()
     language = fields.StringField()
     is_active = fields.BooleanField()
     last_access_ts = fields.DateTimeField()
@@ -203,22 +211,24 @@ class Profile(document.Document):
     # fields below are only available when fb is connected
     username = fields.StringField()
     name = fields.StringField()
+    # this field can ce changed
+    country: dict = dict()
 
     def __str__(self):
         return "Profile"
 
-    def to_json(self, *args, **kwargs):
+    def to_json(self):
         json = {
             "full_name": self.full_name,
             "public_id": self.public_id,
             "original_phone": self.original_phone,
             "phone": self.phone,
             "number_verified": self.number_verified,
-            "registration_ts": self.registration_ts,
+            "registration_ts": str(self.registration_ts),
             "country": self.country,
             "language": self.language,
             "is_active": self.is_active,
-            "last_access_ts": self.last_access_ts,
+            "last_access_ts": str(self.last_access_ts),
             "email": self.email,
             "profile_image": self.profile_image,
             "master_contact": self.master_contact,
@@ -231,17 +241,6 @@ class Profile(document.Document):
             json['name'] = self.name
 
         return json
-
-    # class User(document.Document):
-
-
-#     auth_token = fields.StringField()
-#     profile = fields.EmbeddedDocumentField(Profile)
-#     is_new_user = fields.BooleanField()
-#     meta = {'collection': 'User'}
-#
-#     def __str__(self):
-#         return self.auth_token + " >> " + self.profile + " " + self.is_new_user
 
 
 # Message Related models
@@ -306,3 +305,21 @@ class Package(document.EmbeddedDocument):
 class ShopItem(document.Document):
     package_type = fields.StringField()
     packages_list = fields.EmbeddedDocumentListField(Package)
+
+
+# RegisterResponse
+class User:
+    auth_token: str = ""
+    profile: Profile
+    is_new_user: bool = True
+    meta = {'collection': 'User'}
+
+    def __str__(self):
+        return self.auth_token + " >> " + str(self.profile) + " " + str(self.is_new_user)
+
+    def to_json(self):
+        return {
+            "auth_token": self.auth_token,
+            "profile": self.profile.to_json(),
+            "is_new_user": self.is_new_user,
+        }

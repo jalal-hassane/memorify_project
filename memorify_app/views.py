@@ -10,10 +10,11 @@ from django.shortcuts import render
 # Create your views here.
 from mongoengine import QuerySet
 
-from memorify_app.models import Device
 
 # 69:19:tHTUESKpbhHxQsDB <<< auth token
 # todo add constants file in which we add request/response params
+from memorify_app.models import Device
+
 version_required = "Missing version in headers"
 device_id_required = "Missing device-id in headers"
 device_not_exist = "Device does not exist"
@@ -45,7 +46,7 @@ def response_fail(error):
     return HttpResponse(json.dumps(response), content_type="application/json")
 
 
-def generate_auth_token(self):
+def generate_auth_token():
     r1 = random.randint(0, 99)
     r2 = random.randint(0, 99)
     r3 = (''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase) for _ in range(20)))
@@ -96,10 +97,12 @@ def validate_headers(*args_, **kwargs_):
             for h in m_headers:
                 if h not in headers.keys() or not headers.get(h):
                     return response_fail(f'Missing headers fields: {h}')
-            auth = headers.get('auth-token')
+
             d_id = headers.get('device-id')
-            if validate_auth_token(auth, d_id):
-                return response_fail(validate_auth_token(auth, d_id))
+            if 'auth-token' in headers.keys():
+                auth = headers.get('auth-token')
+                if validate_auth_token(auth, d_id):
+                    return response_fail(validate_auth_token(auth, d_id))
             old: QuerySet = Device.objects.filter(device_id=d_id)
             print("Old device", old)
             if old:

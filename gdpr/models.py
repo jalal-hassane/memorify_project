@@ -26,10 +26,8 @@ class Gdpr:
 
     def to_json(self):
         return {
-            "gdpr": {
-                "show_gdpr_popup": self.show_gdpr_popup,
-                "gdpr_popup": self.gdpr_popup.to_json(),
-                "show_dynamic_popup": self.show_dynamic_popup,
-                "dynamic_popup": self.dynamic_popup.to_json()
-            }
+            "show_gdpr_popup": self.show_gdpr_popup,
+            "gdpr_popup": self.gdpr_popup.to_json(),
+            "show_dynamic_popup": self.show_dynamic_popup,
+            "dynamic_popup": self.dynamic_popup.to_json()
         }

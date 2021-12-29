@@ -1,4 +1,5 @@
 from gdpr.models import Gdpr, DynamicPopup
+from memorify_app.constants import GDPR
 from memorify_app.models import GdprPopup, Device
 
 # Create your views here.
@@ -22,7 +23,7 @@ def get(request):
         device.app_version = request.headers.get('version')
         device.is_gdpr_applied = True
         device.save()
-    return response_ok(gdpr)
+    return response_ok({GDPR: gdpr.to_json()})
 
 
 @validate_headers()

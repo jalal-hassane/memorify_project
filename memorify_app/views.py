@@ -1,8 +1,10 @@
 import functools
 import json
 import random
+import re
 import string
 
+import phonenumbers
 from bson import ObjectId
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -10,40 +12,31 @@ from django.shortcuts import render
 # Create your views here.
 from mongoengine import QuerySet
 
-
 # 69:19:tHTUESKpbhHxQsDB <<< auth token
 # todo add constants file in which we add request/response params
-from memorify_app.models import Device
+from phonenumbers import NumberParseException, carrier
+from phonenumbers.phonenumberutil import number_type
 
-version_required = "Missing version in headers"
-device_id_required = "Missing device-id in headers"
-device_not_exist = "Device does not exist"
-device_type_required = "Missing device-type in headers"
-auth_token_required = "Missing auth-token in headers"
-auth_token_not_valid = "auth-token is not valid"
-country_code_required = "country_code field must not be empty"
-country_code_not_available = "country_code field is not available"
+from memorify_app.constants import *
+from memorify_app.models import Device, Country
 
 
-def response_ok(j_obj):
-    if not j_obj:
-        payload = {}
-    else:
-        payload = j_obj.to_json()
+def response_ok(payload):
     response = {
-        "status": "SUCCESS",
-        "payload": payload
+        STATUS: SUCCESS,
+        MESSAGE: SUCCESS,
+        PAYLOAD: payload
     }
-    return HttpResponse(json.dumps(response), content_type="application/json")
+    return HttpResponse(json.dumps(response), content_type=CONTENT_TYPE_JSON)
 
 
 def response_fail(error):
     response = {
-        "status": "FAIL",
-        "message": error,
-        "dev_message": "dev message"
+        STATUS: SUCCESS,
+        MESSAGE: FAIL,
+        DEV_MESSAGE: error
     }
-    return HttpResponse(json.dumps(response), content_type="application/json")
+    return HttpResponse(json.dumps(response), content_type=CONTENT_TYPE_JSON)
 
 
 def generate_auth_token():
@@ -84,7 +77,7 @@ def validate_headers(*args_, **kwargs_):
     def inner_function(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            m_headers = ['app-version', 'device-id', 'device-type']
+            m_headers = [HEADER_APP_VERSION, HEADER_DEVICE_ID, HEADER_DEVICE_TYPE]
             if kwargs_:
                 for arg in kwargs_['kwargs_']:
                     m_headers.append(arg)
@@ -93,26 +86,26 @@ def validate_headers(*args_, **kwargs_):
             headers = args[0].headers
             print("HEADERS12", headers)
             if not headers:
-                return response_fail('Headers fields are all missing')
+                return response_fail(headers_fields_required)
             for h in m_headers:
                 if h not in headers.keys() or not headers.get(h):
-                    return response_fail(f'Missing headers fields: {h}')
+                    return response_fail(f'{missing_headers_fields}{h}')
 
-            d_id = headers.get('device-id')
-            if 'auth-token' in headers.keys():
-                auth = headers.get('auth-token')
+            d_id = headers.get(HEADER_DEVICE_ID)
+            if HEADER_AUTH_TOKEN in headers.keys():
+                auth = headers.get(HEADER_AUTH_TOKEN)
                 if validate_auth_token(auth, d_id):
                     return response_fail(validate_auth_token(auth, d_id))
             old: QuerySet = Device.objects.filter(device_id=d_id)
             print("Old device", old)
             if old:
                 device = old.first()
-                old.app_version = headers.get('app-version')
+                old.app_version = headers.get(HEADER_APP_VERSION)
             else:
                 device = Device(
                     device_id=d_id,
-                    type=headers.get('device-type'),
-                    app_version=headers.get('app-version')
+                    type=headers.get(HEADER_DEVICE_TYPE),
+                    app_version=headers.get(HEADER_APP_VERSION)
                 )
             print("DEVICE", device)
             device.save()
@@ -129,12 +122,65 @@ def validate_body_fields(*args_, **kwargs_):
         def wrapper(*args, **kwargs):
             body = args[0].POST
             if not body:
-                return response_fail('Body fields are all missing')
+                return response_fail(body_fields_required)
             for k in args_[0]:
                 if not body.get(k):
-                    return response_fail(f'Missing body fields: {k}')
+                    return response_fail(f'{missing_body_fields}{k}')
             return func(*args)
 
         return wrapper
 
     return inner_function
+
+
+def get_country(iso_2_country_code, iso_3: str = ""):
+    if iso_3:
+        country = Country.objects.filter(code=iso_3.upper())
+    else:
+        country = Country.objects.filter(iso_2=iso_2_country_code.upper())
+    if country:
+        return country.first().to_json()
+    else:
+        return {}
+
+
+# use iso2 code
+def get_calling_code(iso):
+    for code, isos in phonenumbers.COUNTRY_CODE_TO_REGION_CODE.items():
+        if iso.upper() in isos:
+            return code
+    return None
+
+
+def check_valid_phone(phone, country_code):
+    if not country_code:
+        international_number = phone
+    else:
+        international_number = '+' + str(get_calling_code(country_code)) + phone
+    # todo try catch
+    try:
+        print("INTERNATIONAL", international_number)
+        obj = phonenumbers.parse(international_number)
+        is_mobile = carrier._is_mobile(number_type(obj))
+        if is_mobile:
+            print("OBJECT", obj)
+            phonenumbers.is_valid_number(obj)
+            print("is valid", "Valid")
+            return international_number
+        else:
+            return response_fail(invalid_phone_number)
+    except NumberParseException:
+        print("INTERNATIONAL2", international_number)
+        return response_fail(invalid_phone_number)
+    finally:
+        pass
+
+
+regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+
+
+def check_valid_email(email):
+    if re.fullmatch(regex, email):
+        return True
+    else:
+        return False

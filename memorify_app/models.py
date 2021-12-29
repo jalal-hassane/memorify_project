@@ -45,19 +45,17 @@ class AppSettings(document.Document):
 
     def to_json(self):
         return {
-            "app_settings": {
-                "force_contact_sync": self.force_contact_sync,
-                "message_max_characters": self.message_max_characters,
-                "comment_max_characters": self.comment_max_characters,
-                "contacts_batch_size": self.contacts_batch_size,
-                "audio_max_seconds": self.audio_max_seconds,
-                "video_max_seconds": self.video_max_seconds,
-                "video_min_seconds": self.video_min_seconds,
-                "max_designated_survivors": self.max_designated_survivors,
-                "media_max_count": self.media_max_count,
-                "send_to_contacts_max_count": self.send_to_contacts_max_count,
-                "is_gdpr_applied": self.is_gdpr_applied,
-            }
+            "force_contact_sync": self.force_contact_sync,
+            "message_max_characters": self.message_max_characters,
+            "comment_max_characters": self.comment_max_characters,
+            "contacts_batch_size": self.contacts_batch_size,
+            "audio_max_seconds": self.audio_max_seconds,
+            "video_max_seconds": self.video_max_seconds,
+            "video_min_seconds": self.video_min_seconds,
+            "max_designated_survivors": self.max_designated_survivors,
+            "media_max_count": self.media_max_count,
+            "send_to_contacts_max_count": self.send_to_contacts_max_count,
+            "is_gdpr_applied": self.is_gdpr_applied,
         }
 
     @staticmethod
@@ -193,6 +191,7 @@ class Country(document.Document):
 
 
 class Profile(document.Document):
+    auth_token = fields.StringField()
     full_name = fields.StringField()
     public_id = fields.StringField()
     original_phone = fields.StringField()
@@ -241,6 +240,30 @@ class Profile(document.Document):
             json['name'] = self.name
 
         return json
+
+    @staticmethod
+    def auth_token_filter(auth: str):
+        profile = Profile.objects.filter(auth_token=auth)
+        if profile:
+            return profile.first()
+        else:
+            return None
+
+    @staticmethod
+    def email_filter(email: str, password):
+        profile = Profile.objects.filter(email=email, password=password)
+        if profile:
+            return profile.first()
+        else:
+            return None
+
+    @staticmethod
+    def phone_filter(phone: str, password):
+        profile = Profile.objects.filter(original_phone=phone, password=password)
+        if profile:
+            return profile.first()
+        else:
+            return None
 
 
 # Message Related models

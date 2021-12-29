@@ -20,6 +20,7 @@ from account import views as account_views
 from gdpr import views as gdpr_views
 from memorify_project import settings
 from register import views as register_views
+from shop import views as shop_views
 
 API = 'api'
 APP_SETTINGS = "app_settings"
@@ -65,11 +66,11 @@ SHOP = 'shop/'
 account_urls = [
     path(APP_SETTINGS, account_views.app_settings),
     path(EMAIL_VERIFICATION, admin.site.urls),
-    path(CHANGE_PASSWORD, admin.site.urls),
+    path(CHANGE_PASSWORD, account_views.change_password),
     path(UPDATE_PROFILE, admin.site.urls),
-    path(CHECKIN, admin.site.urls),
+    path(CHECKIN, account_views.checkin),
     path(CONTACT_SYNC, admin.site.urls),
-    path(CHECK_VALID_MSISDN, admin.site.urls),
+    path(CHECK_VALID_MSISDN, account_views.check_valid_msisdn),
     path(DISCONNECT_SOCIAL_ACCOUNT, admin.site.urls),
 ]
 
@@ -94,7 +95,7 @@ gdpr_urls = [
 ]
 
 register_urls = [
-    path(LOGIN, admin.site.urls),
+    path(LOGIN, register_views.login),
     path(REQUEST_CODE, admin.site.urls),
     path(REGISTER_USER, register_views.register),
     path(REGISTER_FACEBOOK, admin.site.urls),
@@ -103,9 +104,8 @@ register_urls = [
 common_urls = []
 
 shop_urls = [
-    path(GET, admin.site.urls),
-    path(PURCHASE, admin.site.urls),
-
+    path(GET, shop_views.get_store_packages),
+    path(PURCHASE, shop_views.verify_purchase),
 ]
 
 api_urls = [

@@ -199,6 +199,7 @@ class Profile(document.Document):
     password = fields.StringField()
     number_verified = fields.BooleanField()
     registration_ts = fields.DateTimeField()
+    country = fields.DictField()
     language = fields.StringField()
     is_active = fields.BooleanField()
     last_access_ts = fields.DateTimeField()
@@ -211,7 +212,6 @@ class Profile(document.Document):
     username = fields.StringField()
     name = fields.StringField()
     # this field can ce changed
-    country: dict = dict()
 
     def __str__(self):
         return "Profile"

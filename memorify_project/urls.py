@@ -88,18 +88,18 @@ comment_urls = []
 gdpr_urls = [
     path(GET, gdpr_views.get),
     path(ACCEPT, gdpr_views.accept),
-    path(UPDATE, admin.site.urls),
-    path(DELETE_ACCOUNT, admin.site.urls),
-    path(MODIFY_ACCOUNT, admin.site.urls),
-    path(EXPORT_DATA, admin.site.urls),
+    path(UPDATE, gdpr_views.update),
+    path(DELETE_ACCOUNT, gdpr_views.delete_account),
+    path(MODIFY_ACCOUNT, gdpr_views.modify_account),
+    path(EXPORT_DATA, gdpr_views.export_data),
 ]
 
 register_urls = [
     path(LOGIN, register_views.login),
-    path(REQUEST_CODE, admin.site.urls),
+    path(REQUEST_CODE, register_views.request_code),
     path(REGISTER_USER, register_views.register),
-    path(REGISTER_FACEBOOK, admin.site.urls),
-    path(UPDATE_PHONE, admin.site.urls),
+    path(REGISTER_FACEBOOK, register_views.register_facebook),
+    path(UPDATE_PHONE, register_views.update_phone),
 ]
 common_urls = []
 

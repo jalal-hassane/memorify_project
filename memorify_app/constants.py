@@ -1,3 +1,8 @@
+# Twilio config
+twilio_account_sid = "AC1e9bc55c70c86a975e549bd545e55010"
+twilio_auth_token = "3d8514be95e0a85b41eb7876cab43604"
+twilio_phone_number = "+12344057755"
+twilio_verification_body = "Your Memorify Project verification code is: "
 # common response constants
 SUCCESS = "SUCCESS"
 FAIL = "FAIL"
@@ -48,6 +53,8 @@ IS_VALID_MSI_SDN = "is_valid_msisdn"
 INTERNATIONAL_MSI_SDN = "international_msisdn"
 OLD_PASSWORD = "old_password"
 EMAIL_PHONE = "email_phone"
+VERIFICATION_TYPE = "verification_type"
+FIREBASE_ERROR = "firebase_error"
 
 common_body_fields = [
     LANGUAGE,
@@ -86,6 +93,20 @@ registration_body_fields = common_login_register_body_fields + [
 
 login_body_fields = common_login_register_body_fields + [
     EMAIL_PHONE,
+]
+
+common_phone_verification_fields = [
+    MSI_SDN,
+    COUNTRY_CODE
+]
+
+request_code_fields = common_phone_verification_fields + [
+    VERIFICATION_TYPE,
+    FIREBASE_ERROR
+]
+
+update_phone_fields = common_phone_verification_fields + [
+    VERIFICATION_CODE
 ]
 
 change_password_fields = [

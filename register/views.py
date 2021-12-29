@@ -5,63 +5,30 @@ from datetime import datetime
 # needed fields in registration
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from twilio.rest import Client
 
 from memorify_app.models import Profile, User
 from memorify_app.views import *
 
-
-# RegisterRequest
-class RegisterRequest:
-    name: str = ""
-    phone: str = ""
-    password: str = ""
-    verify_password: str = ""
-    timezone: str = ""
-    timezone_region: str = ""
-    language: str = ""
-    device_token: str = ""
-    device_name: str = ""
-    device_os_version: str = ""
-    device_oem: str = ""
-    device_carrier: str = ""
-    app_store_version: str = ""
-    is_rooted: bool = False
-    is_emulator: bool = False
-    country_code: str = ""
-    verification_code: str = ""
-    pass
-
-
-class TestBody:
-    test_key: str = ""
-    key_2: str = ""
-    key_3: str = ""
-
-    def verify_attribute(self, param):
-        if not param:
-            return False
-        return param
-
-    def __init__(self, body):
-        self.test_key = body.get('test_key')
-        self.key_2 = body.get('key_2')
-        self.key_3 = body.get('key_3')
-
-    @classmethod
-    def to_test_body(cls, body):
-        return cls(body)
+phone_codes_map = dict()
 
 
 # firebase verification
-def verify_code(code) -> bool:
-    return True
+def verify_code(phone, verification_code) -> bool:
+    print("VERIFICATION CODE", verification_code)
+    try:
+        code = phone_codes_map[phone]
+        if not code or verification_code != code:
+            return False
+        del phone_codes_map[phone]
+        return True
+    except KeyError:
+        return False
 
 
 def create_new_profile(body):
     original_phone = body.get(PHONE)
     country_code = body.get(COUNTRY_CODE)
-    if not verify_code(body.get(VERIFICATION_CODE)):
-        return response_fail(invalid_verification_code)
     password = body.get(PASSWORD)
     if password != body.get(VERIFY_PASSWORD):
         return response_fail(password_mismatch)
@@ -80,7 +47,7 @@ def create_new_profile(body):
         return verified_phone_number
     else:
         pass
-    profile.phone = '+' + str(verified_phone_number.country_code) + str(verified_phone_number.national_number)
+    profile.phone = verified_phone_number
     profile.number_verified = True
     profile.country = get_country(country_code)
     profile.password = password
@@ -93,6 +60,7 @@ def create_new_profile(body):
     profile.facebook_connected = False
     profile.allowed_messages = 3
     profile.save()
+    return profile
     pass
 
 
@@ -126,12 +94,16 @@ def register(request):
     print("BODY JSON1", str(request.build_absolute_uri()))
     print("BODY JSON DUMPS", json.dumps(body))
     original_phone = body.get(PHONE)
+    if not verify_code(original_phone, body.get(VERIFICATION_CODE)):
+        return response_fail(invalid_verification_code)
     # check for old profile
     country_code = body.get(COUNTRY_CODE)
     old_profile = Profile.objects.filter(original_phone=original_phone)
     if old_profile:
         profile = old_profile.first()
         profile.country = get_country(country_code)
+        profile.auth_token = generate_auth_token()
+        profile.save()
     else:
         profile = create_new_profile(body)
         if isinstance(profile, HttpResponse):
@@ -201,9 +173,58 @@ def login(request):
     return response_ok(login_response)
 
 
+@csrf_exempt  # bypass validation for now
+@validate_headers()
+@validate_body_fields(request_code_fields)
+@require_POST
 def request_code(request):
-    pass
+    body = request.POST
+    phone = body.get(MSI_SDN)
+    country_code = body.get(COUNTRY_CODE)
+    # should verify the phone number first
+    validation = check_valid_phone(phone, country_code)
+    if isinstance(validation, HttpResponse):
+        return validation
+    print("international", validation)
+
+    r1 = random.randint(0, 999999)
+    global phone_codes_map
+    code = "{:06d}".format(r1)
+    phone_codes_map.update({phone: code})
+    print("CODE", code)
+    return response_ok({INTERNATIONAL_MSI_SDN: validation})
+    # todo fix twilio message sent but not delivered error
+    client = Client(twilio_account_sid, twilio_auth_token)
+
+    message = client.messages.create(
+        body=f'{twilio_verification_body}{code}',
+        from_=twilio_phone_number,
+        to=validation
+    )
+    return response_ok({INTERNATIONAL_MSI_SDN: validation})
 
 
+@csrf_exempt  # bypass validation for now
+@validate_headers(kwargs_=[HEADER_AUTH_TOKEN])
+@validate_body_fields(update_phone_fields)
+@require_POST
 def update_phone(request):
-    pass
+    body = request.POST
+    phone = body.get(MSI_SDN)
+    country_code = body.get(COUNTRY_CODE)
+    # should verify the phone number first
+    validation = check_valid_phone(phone, country_code)
+    if isinstance(validation, HttpResponse):
+        return validation
+    if not verify_code(phone, body.get(VERIFICATION_CODE)):
+        return response_fail(invalid_verification_code)
+    print("international", validation)
+    auth_token = request.headers.get(HEADER_AUTH_TOKEN)
+    profile = Profile.auth_token_filter(auth_token)
+    if profile:
+        profile.original_phone = phone
+        profile.phone = validation
+        profile.save()
+        return response_ok({PROFILE: profile.to_json()})
+    else:
+        return response_fail("Unknown Error")

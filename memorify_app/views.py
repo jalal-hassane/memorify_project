@@ -5,15 +5,10 @@ import re
 import string
 
 import phonenumbers
-from bson import ObjectId
 from django.http import HttpResponse
-from django.shortcuts import render
-
 # Create your views here.
 from mongoengine import QuerySet
-
 # 69:19:tHTUESKpbhHxQsDB <<< auth token
-# todo add constants file in which we add request/response params
 from phonenumbers import NumberParseException, carrier
 from phonenumbers.phonenumberutil import number_type
 
@@ -166,6 +161,7 @@ def check_valid_phone(phone, country_code):
             print("OBJECT", obj)
             phonenumbers.is_valid_number(obj)
             print("is valid", "Valid")
+            international_number = '+' + str(obj.country_code) + str(obj.national_number)
             return international_number
         else:
             return response_fail(invalid_phone_number)

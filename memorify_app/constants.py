@@ -55,6 +55,12 @@ OLD_PASSWORD = "old_password"
 EMAIL_PHONE = "email_phone"
 VERIFICATION_TYPE = "verification_type"
 FIREBASE_ERROR = "firebase_error"
+OCCASION = "occasion"
+MESSAGE_TYPE = "message_type"
+RELEASE_AFTER_LIFE = "release_after_life"
+RELEASE_DT = "release_dt"
+AFTER_LIFE_VERIFICATION_TYPE = "after_life_verification_type"
+CONTACTS_LIST = "contacts_list"
 
 common_body_fields = [
     LANGUAGE,
@@ -115,6 +121,14 @@ change_password_fields = [
     OLD_PASSWORD
 ]
 
+send_message_body_fields = [
+    OCCASION,
+    MESSAGE_TYPE,
+    RELEASE_AFTER_LIFE,
+    # RELEASE_DT, mandatory in case release after life false
+    AFTER_LIFE_VERIFICATION_TYPE,
+    CONTACTS_LIST,
+]
 # error messages
 headers_fields_required = "Headers fields are all missing"
 body_fields_required = "Body fields are all missing"

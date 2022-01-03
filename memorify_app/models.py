@@ -211,6 +211,7 @@ class Profile(document.Document):
     # fields below are only available when fb is connected
     username = fields.StringField()
     name = fields.StringField()
+
     # this field can ce changed
 
     def __str__(self):
@@ -267,7 +268,7 @@ class Profile(document.Document):
 
 
 # Message Related models
-class Media(document.EmbeddedDocument):
+class Media(document.Document):
     public_id = fields.StringField()
     message_public_id = fields.StringField()
     thumbnail_path = fields.StringField()
@@ -293,7 +294,7 @@ class MessageUser(document.EmbeddedDocument):
 class Message(document.Document):
     public_id = fields.StringField()
     from_user = fields.EmbeddedDocumentField(MessageUser)
-    to_contact = fields.EmbeddedDocumentField(MessageUser)
+    to_contact = fields.EmbeddedDocumentField(MessageUser)  # to_contact is not important anymore
     occasion = fields.StringField()
     type = fields.StringField()
     created_dt = fields.DateTimeField()
@@ -317,17 +318,21 @@ class Message(document.Document):
     media_list = fields.EmbeddedDocumentListField(Media)
 
 
-class Package(document.EmbeddedDocument):
+class Package(document.Document):
     package_id = fields.StringField()
     amount = fields.StringField()
     price = fields.StringField()
     package_key = fields.StringField()
     duration = fields.StringField()
 
-
-class ShopItem(document.Document):
-    package_type = fields.StringField()
-    packages_list = fields.EmbeddedDocumentListField(Package)
+    def to_json(self):
+        return {
+            "package_id": self.package_id,
+            "amount": self.amount,
+            "price": self.price,
+            "package_key": self.package_key,
+            "duration": self.duration,
+        }
 
 
 # RegisterResponse

@@ -116,6 +116,7 @@ def validate_body_fields(*args_, **kwargs_):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             body = args[0].POST
+            print("BODY FIELDS", body)
             if not body:
                 return response_fail(body_fields_required)
             for k in args_[0]:

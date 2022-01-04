@@ -151,8 +151,9 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-MEDIA_URL = "/images/"
 FLAGS_URL = '/images/flags_rounded_small/'
 PROFILE_PICTURES_URL = '/images/profile_pictures/'
 MEDIA_ROOT_FLAGS = os.path.join(BASE_DIR, "images/flags_rounded_small/")
 MEDIA_ROOT_PP = os.path.join(BASE_DIR, "images/profile_pictures/")
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from django.core.paginator import Paginator
 from mongoengine import document, fields
 
 
@@ -242,6 +245,14 @@ class Profile(document.Document):
 
         return json
 
+    def to_message_user_json(self):
+        return {
+            "public_id": self.public_id,
+            "phone": self.phone,
+            "name": self.full_name,
+            "profile_image": self.profile_image,
+        }
+
     @staticmethod
     def auth_token_filter(auth: str):
         profile = Profile.objects.filter(auth_token=auth)
@@ -259,12 +270,28 @@ class Profile(document.Document):
             return None
 
     @staticmethod
-    def phone_filter(phone: str, password):
+    def phone_password_filter(phone: str, password):
         profile = Profile.objects.filter(original_phone=phone, password=password)
         if profile:
             return profile.first()
         else:
             return None
+
+    @staticmethod
+    def public_id_phone_filter(public_id, phone: str):
+        profile = Profile.objects.filter(public_id=public_id, phone=phone)
+        if profile:
+            return profile.first()
+        else:
+            return None
+
+    @staticmethod
+    def get_public_id(auth_token):
+        profile = Profile.auth_token_filter(auth_token)
+        if not profile:
+            return ""
+        else:
+            return profile.public_id
 
 
 # Message Related models
@@ -275,10 +302,41 @@ class Media(document.Document):
     pre_signed_url = fields.StringField()
     type = fields.StringField()
 
+    def to_json(self):
+        return {
+            "public_id": self.public_id,
+            "message_public_id": self.message_public_id,
+            "thumbnail_path": self.thumbnail_path,
+            "pre_signed_url": self.pre_signed_url,
+            "type": self.type,
+        }
+
     def __str__(self):
         return "media"
 
 
+class DBMedia(document.Document):
+    file = fields.FileField()
+    public_id = fields.StringField()
+    message_public_id = fields.StringField()
+    thumbnail_path = fields.StringField()
+    pre_signed_url = fields.StringField()
+    type = fields.StringField()
+
+    def to_json(self):
+        return {
+            "public_id": self.public_id,
+            "message_public_id": self.message_public_id,
+            "thumbnail_path": self.thumbnail_path,
+            "pre_signed_url": self.pre_signed_url,
+            "type": self.type,
+        }
+
+    def __str__(self):
+        return "media"
+
+
+# this class is not to be saved
 class MessageUser(document.EmbeddedDocument):
     public_id = fields.StringField()
     phone = fields.StringField()
@@ -293,29 +351,106 @@ class MessageUser(document.EmbeddedDocument):
 
 class Message(document.Document):
     public_id = fields.StringField()
-    from_user = fields.EmbeddedDocumentField(MessageUser)
-    to_contact = fields.EmbeddedDocumentField(MessageUser)  # to_contact is not important anymore
+    from_user = fields.DictField()  # Message user dict
+    to_contact = fields.DictField(null=True)  # to_contact is not important anymore
     occasion = fields.StringField()
     type = fields.StringField()
-    created_dt = fields.DateTimeField()
-    release_dt = fields.DateTimeField()
-    read_dt = fields.DateTimeField()
-    updated_dt = fields.DateTimeField()
+    created_dt = fields.DateTimeField(default=datetime.now())
+    release_dt = fields.DateTimeField(null=True)
+    read_dt = fields.DateTimeField(null=True)
+    updated_dt = fields.DateTimeField(null=True)
     release_after_life = fields.BooleanField()
     after_life_verification_type = fields.StringField()
-    is_locked = fields.BooleanField()
-    verifying = fields.BooleanField()
-    comments_count = fields.IntField()
-    media_length = fields.IntField()
-    thumbnail_path = fields.StringField()
-    video_path = fields.StringField()
-    receivers_list = fields.EmbeddedDocumentListField(MessageUser)
+    is_locked = fields.BooleanField(default=False)
+    verifying = fields.BooleanField(null=True)
+    comments_count = fields.IntField(null=True)
+    media_length = fields.IntField(default=0)
+    thumbnail_path = fields.StringField(null=True)
+    video_path = fields.StringField(null=True)
+    receivers_list = fields.ListField()  # Message User
     # secured message
-    text = fields.StringField()
-    after_life_code = fields.IntField()
-    audio_path = fields.StringField()
-    pre_signed_url = fields.StringField()
-    media_list = fields.EmbeddedDocumentListField(Media)
+    text = fields.StringField(null=True)
+    after_life_code = fields.IntField(null=True)
+    audio_path = fields.StringField(null=True)
+    pre_signed_url = fields.StringField(null=True)
+    media_list = fields.ListField(null=True)  # Media
+
+    def to_json(self, secured_message: bool = False):
+        # check if message is locked every time we call this method
+        if datetime.fromisoformat(self.release_dt) > datetime.now():
+            self.is_locked = True
+        else:
+            self.is_locked = False
+        self.save()
+        json = {
+            "public_id": self.public_id,
+            "from_user": self.from_user,
+            "to_contact": self.to_contact,
+            "occasion": self.occasion,
+            "type": self.type,
+            "created_dt": str(self.created_dt),
+            "release_after_life": self.release_after_life,
+            "after_life_verification_type": self.after_life_verification_type,
+            "is_locked": self.is_locked,
+            "verifying": self.verifying,
+            "comments_count": self.comments_count,
+            "media_length": self.media_length,
+            "thumbnail_path": self.thumbnail_path,
+            "video_path": self.video_path,
+            "receivers_list": self.receivers_list,
+        }
+
+        if self.release_dt:
+            json["release_dt"] = str(self.release_dt)
+        if self.read_dt:
+            json["read_dt"] = str(self.read_dt)
+        if self.updated_dt:
+            json["updated_dt"] = str(self.updated_dt)
+        if secured_message:
+            if self.text:
+                json["text"] = self.text
+            if self.after_life_code:
+                json["after_life_code"] = self.after_life_code
+            if self.audio_path:
+                json["audio_path"] = self.audio_path
+            if self.pre_signed_url:
+                json["pre_signed_url"] = self.pre_signed_url
+            if self.media_list:
+                json["media_list"] = [m for m in self.media_list]
+        return json
+
+    @staticmethod
+    def public_id_filter(public_id):
+        message = Message.objects.filter(public_id=public_id)
+        if message:
+            return message.first()
+        else:
+            return None
+
+    @staticmethod
+    def inbox(public_id, page):
+        results = []
+        for message in Message.objects.all():
+            for receiver in message.receivers_list:
+                if receiver['public_id'] == public_id:
+                    results.append(message.to_json())
+                else:
+                    pass
+        paginator = Paginator(results, 10)
+        if page not in paginator.page_range:
+            return []
+        data = paginator.page(page)
+        return data.object_list
+
+    @staticmethod
+    def outbox(public_id, page):
+        results = [message.to_json() for message in Message.objects.all() if
+                   message.from_user['public_id'] == public_id]
+        paginator = Paginator(results, 10)
+        if page not in paginator.page_range:
+            return []
+        data = paginator.page(page)
+        return data.object_list
 
 
 class Package(document.Document):

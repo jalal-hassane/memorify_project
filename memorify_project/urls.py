@@ -20,6 +20,7 @@ from account import views as account_views
 from gdpr import views as gdpr_views
 from memorify_project import settings
 from register import views as register_views
+from message import views as message_views
 from shop import views as shop_views
 
 API = 'api'
@@ -75,13 +76,13 @@ account_urls = [
 ]
 
 message_urls = [
-    path(SEND_MESSAGE, admin.site.urls),
-    path(UPLOAD_MEDIA, admin.site.urls),
-    path(INBOX, admin.site.urls),
-    path(OUTBOX, admin.site.urls),
-    path(GET_BY_ID, admin.site.urls),
-    path(DELETE_MESSAGE, admin.site.urls),
-    path(SUBMIT_CERTIFICATE, admin.site.urls),
+    path(SEND_MESSAGE, message_views.send_message),
+    path(UPLOAD_MEDIA, message_views.upload_media),
+    path(INBOX, message_views.inbox),
+    path(OUTBOX, message_views.outbox),
+    path(GET_BY_ID, message_views.get_by_id),
+    path(DELETE_MESSAGE, message_views.delete_message),
+    path(SUBMIT_CERTIFICATE, message_views.submit_certificate),
 ]
 comment_urls = []
 
@@ -129,3 +130,5 @@ if settings.DEBUG:
                           document_root=settings.MEDIA_ROOT_FLAGS)
     urlpatterns += static(settings.PROFILE_PICTURES_URL,
                           document_root=settings.MEDIA_ROOT_PP)
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)

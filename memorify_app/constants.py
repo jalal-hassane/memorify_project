@@ -61,6 +61,11 @@ RELEASE_AFTER_LIFE = "release_after_life"
 RELEASE_DT = "release_dt"
 AFTER_LIFE_VERIFICATION_TYPE = "after_life_verification_type"
 CONTACTS_LIST = "contacts_list"
+PUBLIC_ID = "public_id"
+MOBILE = "mobile"
+MESSAGE_PUBLIC_ID = "message_public_id"
+PAGE_INDEX = "page_index"
+CONTACT_PUBLIC_ID = "contact_public_id"
 
 common_body_fields = [
     LANGUAGE,

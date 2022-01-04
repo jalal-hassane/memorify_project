@@ -151,7 +151,7 @@ def login(request):
                 return response_fail(wrong_credentials)
     else:
         # phone number
-        profile = Profile.phone_filter(username, password)
+        profile = Profile.phone_password_filter(username, password)
         if profile:
             profile.country = get_country(iso_2_country_code=code)
         else:

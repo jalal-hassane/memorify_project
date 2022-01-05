@@ -66,13 +66,13 @@ SHOP = 'shop/'
 
 account_urls = [
     path(APP_SETTINGS, account_views.app_settings),
-    path(EMAIL_VERIFICATION, admin.site.urls),
+    path(EMAIL_VERIFICATION, admin.site.urls),  # todo email_verification
     path(CHANGE_PASSWORD, account_views.change_password),
-    path(UPDATE_PROFILE, admin.site.urls),
+    path(UPDATE_PROFILE, account_views.update_profile),
     path(CHECKIN, account_views.checkin),
-    path(CONTACT_SYNC, admin.site.urls),
+    path(CONTACT_SYNC, admin.site.urls),  # todo contact_sync
     path(CHECK_VALID_MSISDN, account_views.check_valid_msisdn),
-    path(DISCONNECT_SOCIAL_ACCOUNT, admin.site.urls),
+    path(DISCONNECT_SOCIAL_ACCOUNT, admin.site.urls),  # todo disconnect_social_account
 ]
 
 message_urls = [
@@ -90,23 +90,23 @@ gdpr_urls = [
     path(GET, gdpr_views.get),
     path(ACCEPT, gdpr_views.accept),
     path(UPDATE, gdpr_views.update),
-    path(DELETE_ACCOUNT, gdpr_views.delete_account),
-    path(MODIFY_ACCOUNT, gdpr_views.modify_account),
-    path(EXPORT_DATA, gdpr_views.export_data),
+    path(DELETE_ACCOUNT, gdpr_views.delete_account),  # todo delete_account
+    path(MODIFY_ACCOUNT, gdpr_views.modify_account),  # todo modify_account
+    path(EXPORT_DATA, gdpr_views.export_data),  # todo export_data
 ]
 
 register_urls = [
     path(LOGIN, register_views.login),
     path(REQUEST_CODE, register_views.request_code),
     path(REGISTER_USER, register_views.register),
-    path(REGISTER_FACEBOOK, register_views.register_facebook),
+    path(REGISTER_FACEBOOK, register_views.register_facebook),  # todo register_facebook
     path(UPDATE_PHONE, register_views.update_phone),
 ]
 common_urls = []
 
 shop_urls = [
     path(GET, shop_views.get_store_packages),
-    path(PURCHASE, shop_views.verify_purchase),
+    path(PURCHASE, shop_views.verify_purchase),  # todo verify_purchase
 ]
 
 api_urls = [

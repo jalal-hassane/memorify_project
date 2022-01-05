@@ -64,26 +64,6 @@ def create_new_profile(body):
     pass
 
 
-def update_device(device_id, body, app_version, auth_token):
-    old: QuerySet = Device.objects.filter(device_id=device_id)
-    if old:
-        device = old.first()
-        device.auth_token = auth_token
-        device.timezone = body.get(TIMEZONE)
-        device.timezone_region = body.get(TIMEZONE_REGION)
-        device.device_token = body.get(DEVICE_TOKEN)
-        device.model = body.get(DEVICE_NAME)
-        device.os_version = body.get(DEVICE_OS_VERSION)
-        device.manufacturer = body.get(DEVICE_OEM)
-        device.operator = body.get(MOBILE_CARRIER)
-        device.app_store_version = body.get(APP_STORE_VERSION)
-        device.language = body.get(LANGUAGE)
-        device.app_version = app_version
-        device.is_rooted = bool(body.get(IS_ROOTED))
-        device.is_emulator = bool(body.get(IS_EMULATOR))
-        device.save()
-
-
 @csrf_exempt  # bypass validation for now
 @validate_headers()
 @validate_body_fields(registration_body_fields)

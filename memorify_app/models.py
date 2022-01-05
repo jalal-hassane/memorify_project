@@ -26,6 +26,22 @@ class Device(document.Document):
     # should be true if user has declined advertisement and support
     is_gdpr_applied = fields.BooleanField(default=False)
 
+    @staticmethod
+    def device_id_filter(d_id: str):
+        device = Device.objects.filter(device_id=d_id)
+        if device:
+            return device.first()
+        else:
+            return None
+
+    @staticmethod
+    def auth_token_filter(auth: str):
+        device = Device.objects.filter(auth_token=auth)
+        if device:
+            return device.first()
+        else:
+            return None
+
     def __str__(self):
         return self.device_id
 

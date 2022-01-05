@@ -253,7 +253,7 @@ def submit_certificate(request):
     # should accept only one media at a time to handle error
     media = files.get("death_certificate")
     if not media:
-        return response_fail(f"Missing files: death_certificate")
+        return response_fail("Missing files: death_certificate")
     print("FILE", media)
     try:
         default_storage.save(media.name, media)

@@ -66,17 +66,23 @@ MOBILE = "mobile"
 MESSAGE_PUBLIC_ID = "message_public_id"
 PAGE_INDEX = "page_index"
 CONTACT_PUBLIC_ID = "contact_public_id"
+REMOVE_PROFILE_PIC = "remove_profile_pic"
+PACKAGE_PUBLIC_ID = "package_public_id"
+PURCHASE_TOKEN = "purchase_token"
 
 common_body_fields = [
     LANGUAGE,
     TIMEZONE,
     TIMEZONE_REGION,
     COUNTRY_CODE,
+]
+
+common_extra_body_fields = [
     APP_STORE_VERSION,
     MOBILE_CARRIER,
 ]
 
-common_login_register_body_fields = common_body_fields + [
+common_login_register_body_fields = common_body_fields + common_extra_body_fields + [
     PASSWORD,
     # DEVICE_TOKEN,
     DEVICE_NAME,
@@ -84,7 +90,7 @@ common_login_register_body_fields = common_body_fields + [
     DEVICE_OEM,
 ]
 
-check_in_body_fields = common_body_fields + [
+check_in_body_fields = common_body_fields + common_extra_body_fields + [
     DEVICE_TOKEN,
     IS_FIRST_LOADING,
     DEVICE_ID,
@@ -134,6 +140,16 @@ send_message_body_fields = [
     AFTER_LIFE_VERIFICATION_TYPE,
     CONTACTS_LIST,
 ]
+
+update_profile_body_fields = common_body_fields + [
+    REMOVE_PROFILE_PIC
+]
+
+verify_purchase_body_fields = [
+    PACKAGE_PUBLIC_ID,
+    PURCHASE_TOKEN
+]
+
 # error messages
 headers_fields_required = "Headers fields are all missing"
 body_fields_required = "Body fields are all missing"

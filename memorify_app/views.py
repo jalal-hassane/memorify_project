@@ -181,3 +181,56 @@ def check_valid_email(email):
         return True
     else:
         return False
+
+
+def update_device(device_id, body, app_version, auth_token):
+    device = Device.device_id_filter(device_id)
+    if not device:
+        return
+    device.auth_token = auth_token
+    device.app_version = app_version
+    tz = body[TIMEZONE]
+    if tz:
+        device.timezone = tz
+
+    tz_region = body[TIMEZONE_REGION]
+    if tz_region:
+        device.timezone_region = tz_region
+
+    token = body[DEVICE_TOKEN]
+    if token:
+        device.device_token = token
+
+    model = body[DEVICE_NAME]
+    if model:
+        device.model = model
+
+    os_version = body[DEVICE_OS_VERSION]
+    if os_version:
+        device.os_version = os_version
+
+    device_oem = body[DEVICE_OEM]
+    if device_oem:
+        device.manufacturer = device_oem
+
+    mobile_carrier = body[MOBILE_CARRIER]
+    if mobile_carrier:
+        device.operator = mobile_carrier
+
+    app_store_version = body[APP_STORE_VERSION]
+    if app_store_version:
+        device.app_store_version = app_store_version
+
+    language = body[LANGUAGE]
+    if language:
+        device.language = language
+
+    is_rooted = body[IS_ROOTED]
+    if is_rooted:
+        device.is_rooted = json.loads(is_rooted)
+
+    is_emulator = body[IS_EMULATOR]
+    if is_emulator:
+        device.is_emulator = json.loads(is_emulator)
+
+    device.save()

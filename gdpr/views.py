@@ -1,9 +1,13 @@
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
 from gdpr.models import Gdpr, DynamicPopup
-from memorify_app.constants import GDPR
-from memorify_app.models import GdprPopup, Device
+from memorify_app.constants import GDPR, HEADER_AUTH_TOKEN, export_delete_data_body_fields, NAME, EMAIL, ID_FA
+from memorify_app.models import GdprPopup, Device, User
 
 # Create your views here.
-from memorify_app.views import response_ok, validate_headers, response_fail, country_code_required, device_not_exist
+from memorify_app.views import response_ok, validate_headers, response_fail, country_code_required, device_not_exist, \
+    validate_body_fields
 
 
 @validate_headers()
@@ -52,14 +56,38 @@ def update(request):
     return response_fail(device_not_exist)
 
 
+def export_delete(auth_token, body, delete_data: bool = False):
+    name = body[NAME]
+    email = body[EMAIL]
+    id_fa = body[ID_FA]
+    # find user with given auth_token
+    # find profile with given auth_token
+    # find messages using profile_id
+    if delete_data:
+        # delete them all
+        pass
+    else:
+        # export data
+        pass
+    return response_ok({})
+
+
 # functions below need auth_token
+@validate_headers(kwargs_=[HEADER_AUTH_TOKEN])
+@validate_body_fields(export_delete_data_body_fields)
+@csrf_exempt  # bypass validation for now
+@require_POST
 def delete_account(request):
-    pass
+    return export_delete(request.headers[HEADER_AUTH_TOKEN], request.POST, delete_data=True)
+
+
+@validate_headers(kwargs_=[HEADER_AUTH_TOKEN])
+@validate_body_fields(export_delete_data_body_fields)
+@csrf_exempt  # bypass validation for now
+@require_POST
+def export_data(request):
+    return export_delete(request.headers[HEADER_AUTH_TOKEN], request.POST)
 
 
 def modify_account(request):
-    pass
-
-
-def export_data(request):
     pass

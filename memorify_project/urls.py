@@ -66,11 +66,11 @@ SHOP = 'shop/'
 
 account_urls = [
     path(APP_SETTINGS, account_views.app_settings),
-    path(EMAIL_VERIFICATION, admin.site.urls),  # todo email_verification
+    path(EMAIL_VERIFICATION, admin.site.urls),  # todo email_verification ( needs token)
     path(CHANGE_PASSWORD, account_views.change_password),
     path(UPDATE_PROFILE, account_views.update_profile),
     path(CHECKIN, account_views.checkin),
-    path(CONTACT_SYNC, admin.site.urls),  # todo contact_sync
+    path(CONTACT_SYNC, account_views.contact_sync),  # todo contact_sync
     path(CHECK_VALID_MSISDN, account_views.check_valid_msisdn),
     path(DISCONNECT_SOCIAL_ACCOUNT, admin.site.urls),  # todo disconnect_social_account
 ]

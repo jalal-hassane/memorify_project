@@ -1,10 +1,13 @@
+import uuid
+
 import requests
 from django.core.files.storage import default_storage
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
+from account.models import CheckInResponse, ValidPhonePayload, ContactSyncPayload, ResultStats
 from memorify_app.firebase_config import storage
-from memorify_app.models import AppSettings, Profile
+from memorify_app.models import AppSettings, Profile, Contact
 # Create your views here.
 from memorify_app.views import *
 
@@ -114,28 +117,6 @@ def update_profile(request):
     return response_ok({PROFILE: profile.to_json()})
 
 
-class CheckInResponse:
-    profile: Profile
-    settings: AppSettings
-
-    def to_json(self):
-        return {
-            PROFILE: self.profile.to_json(),
-            APP_SETTINGS: self.settings.to_json()
-        }
-
-
-class ValidPhonePayload:
-    is_valid_msisdn: bool = True
-    international_msisdn: str
-
-    def to_json(self):
-        return {
-            IS_VALID_MSI_SDN: self.is_valid_msisdn,
-            INTERNATIONAL_MSI_SDN: self.international_msisdn,
-        }
-
-
 @validate_headers(kwargs_=[HEADER_AUTH_TOKEN])
 @validate_body_fields(check_in_body_fields)
 @csrf_exempt  # bypass validation for now
@@ -168,8 +149,263 @@ def checkin(request):
     pass
 
 
+def check_common_model_list(m_json):
+    print("J_OBJ", m_json)
+    is_valid = True
+    keys = [LABEL, VALUE]
+    for obj in m_json:
+        for k in keys:
+            print("KEY", k)
+            if k not in obj.keys():
+                is_valid = False
+                break
+
+    return is_valid
+
+
+def check_address_model_list(m_json):
+    print("J_OBJ", m_json)
+    is_valid = True
+    keys = [LABEL, STREET, CITY, POSTAL_CODE, COUNTRY]
+    for obj in m_json:
+        for k in keys:
+            print("KEY", k)
+            if k not in obj.keys():
+                is_valid = False
+                break
+    return is_valid
+
+
+def validate_contacts(c_list, profile_public_id):
+    """
+    :param profile_public_id
+    :param c_list: list of contacts
+    :return: ContactSyncPayload
+    """
+    contact_fields = [
+        C_ID,
+        IS_DELETED,
+        NAME_PREFIX,
+        FIRST_NAME,
+        MIDDLE_NAME,
+        FAMILY_NAME,
+        NICKNAME,
+        EMAILS,
+        PHONES,
+        JOB_TITLE,
+        DEPARTMENT_NAME,
+        ORGANIZATION_NAME,
+        NAME_SUFFIX,
+        PHONETIC_GIVEN_NAME,
+        PHONETIC_MIDDLE_NAME,
+        PHONETIC_FAMILY_NAME,
+        PHONETIC_ORGANIZATION_NAME,
+        ADDRESSES,
+        URLS,
+        BIRTHDAY,
+        NOTE,
+        INSTANT_MESSAGE_ADDRESSES
+    ]
+    received = 0
+    valid = 0
+    not_valid = 0
+    added = 0
+    updated = 0
+    deleted = 0
+    valid_contacts = []
+    for c in c_list:
+        received += 1
+        print("CONTACT", c)
+        all_fields_exist = True
+        print("KEYS", c.keys())
+        for k in contact_fields:
+            print("KEY", k)
+            if k not in c.keys():
+                all_fields_exist = False
+                break
+
+        if not all_fields_exist:
+            not_valid += 1
+            continue
+
+        phones = c[PHONES]
+        if phones == '[]':
+            phones = []
+        else:
+            all_fields_exist = check_common_model_list(phones)
+            if not all_fields_exist:
+                not_valid += 1
+                continue
+
+        emails = c[EMAILS]
+        if emails == '[]':
+            emails = []
+        else:
+            all_fields_exist = check_common_model_list(emails)
+            if not all_fields_exist:
+                not_valid += 1
+                continue
+
+        urls = c[URLS]
+        if urls == '[]':
+            urls = []
+        else:
+            all_fields_exist = check_common_model_list(urls)
+            if not all_fields_exist:
+                not_valid += 1
+                continue
+
+        instant_message_addresses = c[INSTANT_MESSAGE_ADDRESSES]
+        if instant_message_addresses == '[]':
+            instant_message_addresses = []
+        else:
+            all_fields_exist = check_common_model_list(instant_message_addresses)
+            if not all_fields_exist:
+                not_valid += 1
+                continue
+
+        addresses = c[ADDRESSES]  # array of AddressModel
+        if addresses == '[]':
+            addresses = []
+        else:
+            all_fields_exist = check_address_model_list(addresses)
+            if not all_fields_exist:
+                not_valid += 1
+                continue
+
+        valid += 1
+        local_id = str(c[C_ID])
+        is_deleted = json.loads(c[IS_DELETED])
+        name_prefix = c[NAME_PREFIX]
+        first_name = c[FIRST_NAME]
+        middle_name = c[MIDDLE_NAME]
+        family_name = c[FAMILY_NAME]
+        nickname = c[NICKNAME]
+        job_title = c[JOB_TITLE]
+        department_name = c[DEPARTMENT_NAME]
+        organization_name = c[ORGANIZATION_NAME]
+        name_suffix = c[NAME_SUFFIX]
+        phonetic_given_name = c[PHONETIC_GIVEN_NAME]
+        phonetic_middle_name = c[PHONETIC_MIDDLE_NAME]
+        phonetic_family_name = c[PHONETIC_FAMILY_NAME]
+        phonetic_organization_name = c[PHONETIC_ORGANIZATION_NAME]
+        birthday = c[BIRTHDAY]
+        note = c[NOTE]
+
+        #  todo change filter to phone number
+        if phones == "[]":
+            continue
+        old = Contact.local_id_profile_public_id_filter(local_id, profile_public_id)
+        if not old:
+            old = Contact()
+            public_id = str(uuid.uuid4())
+            old.public_id = public_id
+            old.profile_public_id = profile_public_id
+            added += 1
+        else:
+            if is_deleted:
+                deleted += 1
+            else:
+                updated += 1
+
+        old.local_id = str(local_id)
+        old.is_deleted = is_deleted
+        old.name_prefix = name_prefix
+        old.first_name = first_name
+        old.middle_name = middle_name
+        old.family_name = family_name
+        old.nickname = nickname
+        old.emails = emails
+        # todo handle the case when contact has multiple phones (each phone should be a document with same data)
+        old.phones = phones
+        old.job_title = job_title
+        old.department_name = department_name
+        old.organization_name = organization_name
+        old.name_suffix = name_suffix
+        old.phonetic_given_name = phonetic_given_name
+        old.phonetic_middle_name = phonetic_middle_name
+        old.phonetic_family_name = phonetic_family_name
+        old.phonetic_organization_name = phonetic_organization_name
+        old.addresses = addresses
+        old.urls = urls
+        old.birthday = birthday
+        old.note = note
+        old.instant_message_addresses = instant_message_addresses
+        old.save()
+        valid_contacts.append(old.synced_contact_json())
+
+        # for phone in phones:
+        #     print(phone["label"])
+        #     print(phone["value"])
+        #     # check for each phone if exist a contact
+        #     old = Contact.phone_filter(phone["value"], profile_public_id)
+        #     if not old:
+        #         old = Contact()
+        #         public_id = str(uuid.uuid4())
+        #         old.public_id = public_id
+        #         old.profile_public_id = profile_public_id
+        #         added += 1
+        #     else:
+        #         if is_deleted:
+        #             deleted += 1
+        #         else:
+        #             updated += 1
+        #
+        #     old.local_id = str(local_id)
+        #     old.is_deleted = is_deleted
+        #     old.name_prefix = name_prefix
+        #     old.first_name = first_name
+        #     old.middle_name = middle_name
+        #     old.family_name = family_name
+        #     old.nickname = nickname
+        #     old.emails = emails
+        #     # todo handle the case when contact has multiple phones (each phone should be a document with same data)
+        #     old.phone = phone["value"]
+        #     old.job_title = job_title
+        #     old.department_name = department_name
+        #     old.organization_name = organization_name
+        #     old.name_suffix = name_suffix
+        #     old.phonetic_given_name = phonetic_given_name
+        #     old.phonetic_middle_name = phonetic_middle_name
+        #     old.phonetic_family_name = phonetic_family_name
+        #     old.phonetic_organization_name = phonetic_organization_name
+        #     old.addresses = addresses
+        #     old.urls = urls
+        #     old.birthday = birthday
+        #     old.note = note
+        #     old.instant_message_addresses = instant_message_addresses
+        #     old.save()
+        #     valid_contacts.append(old.synced_contact_json())
+
+    contact_sync_payload = ContactSyncPayload()
+    contact_sync_payload.result_list = valid_contacts
+    contact_sync_payload.result_stats = ResultStats()
+
+    contact_sync_payload.result_stats.received_contacts = received
+    contact_sync_payload.result_stats.valid_contacts = valid
+    contact_sync_payload.result_stats.added_contacts = added
+    contact_sync_payload.result_stats.updated_contacts = updated
+    contact_sync_payload.result_stats.deleted_contacts = deleted
+    return contact_sync_payload
+
+
+@validate_headers(kwargs_=[HEADER_AUTH_TOKEN])
+@validate_body_fields([CONTACTS])
+@csrf_exempt  # bypass validation for now
+@require_POST
 def contact_sync(request):
-    pass
+    body = request.POST
+    profile = Profile.auth_token_filter(request.headers[HEADER_AUTH_TOKEN])
+    if not profile:
+        return response_fail("Profile not found")
+
+    contacts = body[CONTACTS]
+    print("CONTACTS", contacts)
+    # validate json
+    c_list = json.loads(contacts)
+    print("CONTACTS JSON", str(c_list))
+    payload = validate_contacts(c_list, profile.public_id)
+    return response_ok(payload.to_json())
 
 
 @validate_headers(kwargs_=[HEADER_AUTH_TOKEN])

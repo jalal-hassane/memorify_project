@@ -69,25 +69,55 @@ CONTACT_PUBLIC_ID = "contact_public_id"
 REMOVE_PROFILE_PIC = "remove_profile_pic"
 PACKAGE_PUBLIC_ID = "package_public_id"
 PURCHASE_TOKEN = "purchase_token"
+CONTACTS = "contacts"
+
+# contact dto validation
+C_ID = "c_id"
+IS_DELETED = "is_deleted"
+NAME_PREFIX = "name_prefix"
+FIRST_NAME = "first_name"
+MIDDLE_NAME = "middle_name"
+FAMILY_NAME = "family_name"
+NICKNAME = "nickname"
+EMAILS = "emails"
+PHONES = "phones"
+JOB_TITLE = "job_title"
+DEPARTMENT_NAME = "department_name"
+ORGANIZATION_NAME = "organization_name"
+NAME_SUFFIX = "name_suffix"
+PHONETIC_GIVEN_NAME = "phonetic_given_name"
+PHONETIC_MIDDLE_NAME = "phonetic_middle_name"
+PHONETIC_FAMILY_NAME = "phonetic_family_name"
+PHONETIC_ORGANIZATION_NAME = "phonetic_organization_name"
+ADDRESSES = "addresses"
+URLS = "urls"
+BIRTHDAY = "birthday"
+NOTE = "note"
+INSTANT_MESSAGE_ADDRESSES = "instant_message_addresses"
+LABEL = "label"
+VALUE = "value"
+STREET = "street"
+CITY = "city"
+POSTAL_CODE = "postalCode"
+COUNTRY = "country"
+
+ID_FA = "idfa"
 
 common_body_fields = [
     LANGUAGE,
     TIMEZONE,
     TIMEZONE_REGION,
-    COUNTRY_CODE,
+    COUNTRY_CODE
 ]
 
-common_extra_body_fields = [
-    APP_STORE_VERSION,
-    MOBILE_CARRIER,
-]
+common_extra_body_fields = [APP_STORE_VERSION, MOBILE_CARRIER]
 
 common_login_register_body_fields = common_body_fields + common_extra_body_fields + [
     PASSWORD,
     # DEVICE_TOKEN,
     DEVICE_NAME,
     DEVICE_OS_VERSION,
-    DEVICE_OEM,
+    DEVICE_OEM
 ]
 
 check_in_body_fields = common_body_fields + common_extra_body_fields + [
@@ -95,7 +125,7 @@ check_in_body_fields = common_body_fields + common_extra_body_fields + [
     IS_FIRST_LOADING,
     DEVICE_ID,
     DEVICE_TYPE,
-    APP_VERSION,
+    APP_VERSION
 ]
 
 registration_body_fields = common_login_register_body_fields + [
@@ -105,26 +135,16 @@ registration_body_fields = common_login_register_body_fields + [
     # EMAIL,
     IS_ROOTED,
     IS_EMULATOR,
-    VERIFICATION_CODE,
-]
-
-login_body_fields = common_login_register_body_fields + [
-    EMAIL_PHONE,
-]
-
-common_phone_verification_fields = [
-    MSI_SDN,
-    COUNTRY_CODE
-]
-
-request_code_fields = common_phone_verification_fields + [
-    VERIFICATION_TYPE,
-    FIREBASE_ERROR
-]
-
-update_phone_fields = common_phone_verification_fields + [
     VERIFICATION_CODE
 ]
+
+login_body_fields = common_login_register_body_fields + [EMAIL_PHONE]
+
+common_phone_verification_fields = [MSI_SDN, COUNTRY_CODE]
+
+request_code_fields = common_phone_verification_fields + [VERIFICATION_TYPE, FIREBASE_ERROR]
+
+update_phone_fields = common_phone_verification_fields + [VERIFICATION_CODE]
 
 change_password_fields = [
     PASSWORD,
@@ -141,14 +161,11 @@ send_message_body_fields = [
     CONTACTS_LIST,
 ]
 
-update_profile_body_fields = common_body_fields + [
-    REMOVE_PROFILE_PIC
-]
+update_profile_body_fields = common_body_fields + [REMOVE_PROFILE_PIC]
 
-verify_purchase_body_fields = [
-    PACKAGE_PUBLIC_ID,
-    PURCHASE_TOKEN
-]
+verify_purchase_body_fields = [PACKAGE_PUBLIC_ID, PURCHASE_TOKEN]
+
+export_delete_data_body_fields = [NAME, EMAIL, ID_FA]
 
 # error messages
 headers_fields_required = "Headers fields are all missing"

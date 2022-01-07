@@ -15,7 +15,7 @@ from memorify_app.constants import HEADER_AUTH_TOKEN, update_phone_fields, send_
     RELEASE_DT, missing_body_fields, OCCASION, CONTACTS_LIST, AFTER_LIFE_VERIFICATION_TYPE, MESSAGE_TYPE, PUBLIC_ID, \
     MOBILE, PAGE_INDEX, CONTACT_PUBLIC_ID
 from memorify_app.firebase_config import storage
-from memorify_app.models import Profile, Message, Media
+from memorify_app.models import Profile, Message, Media, Contact
 from memorify_app.views import validate_body_fields, validate_headers, response_fail, response_ok, MESSAGE_PUBLIC_ID
 
 
@@ -34,7 +34,11 @@ def verify_contacts(contacts):
             if profile:
                 receivers_json.append(profile.to_message_user_json())
             else:
-                return response_fail("Profile was not found")
+                contact = Contact.phone_public_id_filter(phone, public_id)
+                if contact:
+                    receivers_json.append(contact.to_message_user_json(phone))
+                else:
+                    return response_fail("Profile was not found")
     return receivers_json
 
 
@@ -172,8 +176,10 @@ def upload_media(request):
 def inbox(request):
     auth_token = request.headers[HEADER_AUTH_TOKEN]
     page_index = int(request.POST[PAGE_INDEX])
-    public_id = Profile.get_public_id(auth_token)
-    return response_ok({"inbox": Message.inbox(public_id, page_index)})
+    profile = Profile.auth_token_filter(auth_token)
+    if not profile:
+        return response_fail("Profile not found")
+    return response_ok({"inbox": Message.inbox(profile.public_id, profile.phone, page_index)})
 
 
 @csrf_exempt  # bypass validation for now
@@ -183,8 +189,10 @@ def inbox(request):
 def outbox(request):
     auth_token = request.headers[HEADER_AUTH_TOKEN]
     page_index = int(request.POST[PAGE_INDEX])
-    public_id = Profile.get_public_id(auth_token)
-    return response_ok({"outbox": Message.outbox(public_id, page_index)})
+    profile = Profile.auth_token_filter(auth_token)
+    if not profile:
+        return response_fail("Profile not found")
+    return response_ok({"outbox": Message.outbox(profile.public_id, profile.phone, page_index)})
 
 
 @csrf_exempt  # bypass validation for now

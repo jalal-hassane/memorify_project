@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from memorify_app.constants import HEADER_AUTH_TOKEN, verify_purchase_body_fields
+from memorify_app.constants import HEADER_AUTH_TOKEN, verify_purchase_body_fields, PACKAGE_PUBLIC_ID, PURCHASE_TOKEN
 from memorify_app.models import Package
 from memorify_app.views import validate_body_fields, validate_headers, response_ok
 
@@ -37,9 +37,10 @@ def get_store_packages(request):
 @require_POST
 def verify_purchase(request):
     # todo integration with play google console
-    package_name = ""
-    product_id = ""
-    token = ""
+    body = request.POST
+    package_name = 'app.memorify.com'
+    product_id = body[PACKAGE_PUBLIC_ID]
+    token = body[PURCHASE_TOKEN]
     validation_request = \
         requests.get("https://androidpublisher.googleapis.com/androidpublisher/v3/"
                      f"applications/{package_name}/purchases/products/{product_id}/tokens/{token}")

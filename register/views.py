@@ -7,11 +7,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from twilio.rest import Client
 
-from memorify_app.models import Profile, User
+from memorify_app.models import Profile, User, Contact
 from memorify_app.views import *
 
 phone_codes_map = dict()
 
+
+# todo: register check if phone number exists in the database
 
 # firebase verification
 def verify_code(phone, verification_code) -> bool:
@@ -26,6 +28,15 @@ def verify_code(phone, verification_code) -> bool:
         return False
 
 
+def check_for_existing_contact(international_phone):
+    contact = Contact.phone_filter(international_phone)
+    if not contact:
+        return None
+    profile = Profile()
+    profile.public_id = contact.public_id
+    return profile
+
+
 def create_new_profile(body):
     original_phone = body.get(PHONE)
     country_code = body.get(COUNTRY_CODE)
@@ -36,17 +47,20 @@ def create_new_profile(body):
         return response_fail(rooted_device_not_allowed)
     if body.get(IS_EMULATOR) == 'True':
         return response_fail(emulator_device_not_allowed)
-    auth_token = generate_auth_token()
-    profile = Profile()
-    profile.auth_token = auth_token
-    profile.public_id = str(uuid.uuid4())
-    profile.full_name = body.get(NAME)
-    profile.original_phone = original_phone
     verified_phone_number = check_valid_phone(original_phone, country_code)
     if not verified_phone_number:
         return verified_phone_number
     else:
         pass
+    # check if phone exists in database
+    profile = check_for_existing_contact(verified_phone_number)
+    if not profile:
+        profile = Profile()
+        profile.public_id = str(uuid.uuid4())
+    auth_token = generate_auth_token()
+    profile.auth_token = auth_token
+    profile.full_name = body.get(NAME)
+    profile.original_phone = original_phone
     profile.phone = verified_phone_number
     profile.number_verified = True
     profile.country = get_country(country_code)

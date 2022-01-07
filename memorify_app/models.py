@@ -444,11 +444,11 @@ class Message(document.Document):
             return None
 
     @staticmethod
-    def inbox(public_id, page):
+    def inbox(public_id, phone, page):
         results = []
         for message in Message.objects.all():
             for receiver in message.receivers_list:
-                if receiver['public_id'] == public_id:
+                if receiver['public_id'] == public_id and receiver['phone'] == phone:
                     results.append(message.to_json())
                 else:
                     pass
@@ -459,9 +459,9 @@ class Message(document.Document):
         return data.object_list
 
     @staticmethod
-    def outbox(public_id, page):
+    def outbox(public_id, phone, page):
         results = [message.to_json() for message in Message.objects.all() if
-                   message.from_user['public_id'] == public_id]
+                   message.from_user['public_id'] == public_id and message.from_user['phone'] == phone]
         paginator = Paginator(results, 10)
         if page not in paginator.page_range:
             return []
@@ -501,4 +501,74 @@ class User:
             "auth_token": self.auth_token,
             "profile": self.profile.to_json(),
             "is_new_user": self.is_new_user,
+        }
+
+
+class Contact(document.Document):
+    profile_public_id = fields.StringField()
+    public_id = fields.StringField()
+    local_id = fields.StringField()
+    status = fields.StringField()
+    is_deleted = fields.BooleanField()
+    name_prefix = fields.StringField()
+    first_name = fields.StringField()
+    middle_name = fields.StringField()
+    family_name = fields.StringField()
+    nickname = fields.StringField()
+    emails = fields.ListField()
+    phones = fields.ListField()
+    job_title = fields.StringField()
+    department_name = fields.StringField()
+    organization_name = fields.StringField()
+    name_suffix = fields.StringField()
+    phonetic_given_name = fields.StringField()
+    phonetic_middle_name = fields.StringField()
+    phonetic_family_name = fields.StringField()
+    phonetic_organization_name = fields.StringField()
+    addresses = fields.ListField()
+    urls = fields.ListField()
+    birthday = fields.StringField()
+    note = fields.StringField()
+    instant_message_addresses = fields.ListField()
+
+    @staticmethod
+    def phone_filter(phone):
+        all_contacts = Contact.objects.all()
+        for contact in all_contacts:
+            if str(contact.phone) in phone or phone == str(contact.phone):
+                return contact
+        return None
+
+    @staticmethod
+    def local_id_profile_public_id_filter(local_id, profile_public_id):
+        contact = Contact.objects.filter(local_id=local_id, profile_public_id=profile_public_id)
+        if not contact:
+            return None
+        else:
+            return contact.first()
+
+    @staticmethod
+    def phone_public_id_filter(phone, profile_public_id):
+        all_contacts = Contact.objects.all()
+        for contact in all_contacts:
+            if str(contact.phone) in phone or phone in str(contact.phone):
+                if contact.profile_public_id == profile_public_id:
+                    return contact
+        return None
+
+    def synced_contact_json(self):
+        return {
+            "public_id": self.public_id,
+            "local_id": self.local_id,
+            "status": self.status,
+            "deleted": self.is_deleted,
+        }
+
+    def to_message_user_json(self, phone):
+        name = self.first_name + self.family_name
+        return {
+            "public_id": self.public_id,
+            "phone": phone,
+            "name": name,
+            "profile_image": None,
         }

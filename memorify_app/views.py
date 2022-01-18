@@ -5,12 +5,14 @@ import re
 import string
 
 import phonenumbers
+import requests
 from django.http import HttpResponse
 # Create your views here.
 from mongoengine import QuerySet
 # 69:19:tHTUESKpbhHxQsDB <<< auth token
 from phonenumbers import NumberParseException, carrier
 from phonenumbers.phonenumberutil import number_type
+from pyfcm import FCMNotification
 
 from memorify_app.constants import *
 from memorify_app.models import Device, Country
@@ -234,3 +236,24 @@ def update_device(device_id, body, app_version, auth_token):
         device.is_emulator = json.loads(is_emulator)
 
     device.save()
+
+
+# todo send message if user is not registered in the database through Twilio
+def send_push(token, data):
+    if token == "":
+        # send message to user
+        pass
+    url = "https://fcm.googleapis.com/fcm/send"
+    t = "c3xrdiG0TH65XRpbRBzQea:APA91bGbL7DuvbWwJj6k1nCRLFGVviPWbOisrAFLIWlq-X0LC7On-" \
+        "NX5z6oYVGzB3M8f6ryh12p4BlvIiDBH27W6nZkXRWmNO3g21ZbM_ZoZdD5vjCcin_i3nS5he5GHp3HADZoF9hJ7"
+    push_service = FCMNotification(api_key="AAAAH8mdaxM:APA91bGwzaNxn8nUCMQOB0qZzuaEL-JCkSmw-"
+                                           "jQBphyQBrRSbE3oISaOHPWMuaYL0edKAiiO1uiv6kVR0JhSnmgFW-"
+                                           "3aqtJV3RQLgb_mlKOisTmslTjvZphbTgRADGrjP78y3CavxDEr")
+
+    registration_id = t
+    message_title = "Welcome"
+    message_body = "Hello, this a welcome test message"
+    result = push_service.notify_single_device(registration_id=registration_id,
+                                               message_title=message_title,
+                                               message_body=message_body)
+    print("RESULT", result)

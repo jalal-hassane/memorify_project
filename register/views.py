@@ -82,7 +82,7 @@ def create_new_profile(body):
 @validate_headers()
 @validate_body_fields(registration_body_fields)
 @require_POST
-# @csrf_protect
+# @csrf_protect // only use this decorator when calling view from django web application
 def register(request):
     body = request.POST
     print("BODY JSON1", str(request.build_absolute_uri()))

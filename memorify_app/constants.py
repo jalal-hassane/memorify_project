@@ -100,7 +100,7 @@ STREET = "street"
 CITY = "city"
 POSTAL_CODE = "postalCode"
 COUNTRY = "country"
-
+FIREBASE_TOKEN = "firebase_token"
 ID_FA = "idfa"
 
 common_body_fields = [

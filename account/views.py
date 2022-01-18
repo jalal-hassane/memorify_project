@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from account.models import CheckInResponse, ValidPhonePayload, ContactSyncPayload, ResultStats
-from memorify_app.firebase_config import storage
+from memorify_app.firebase_config import storage, auth
 from memorify_app.models import AppSettings, Profile, Contact
 # Create your views here.
 from memorify_app.views import *
@@ -26,8 +26,26 @@ def app_settings(request):
     return response_ok({APP_SETTINGS: settings.to_json()})
 
 
+@csrf_exempt
+@validate_headers()
+@validate_body_fields([FIREBASE_TOKEN])
+@require_POST
 def firebase_email_verification(request):
-    pass
+    auth_token = request.headers.get(HEADER_AUTH_TOKEN)
+    body = request.POST
+    token = body[FIREBASE_TOKEN]
+    response = auth.get_account_info(token)
+    user = response['users'][0]
+    # save profile and return profile payload to user
+    if user['emailVerified']:
+        email = user['email']
+        profile = Profile.auth_token_filter(auth_token)
+        profile.email = email
+        profile.save()
+        usr = "" \
+              "Hello"
+        return response_ok({PROFILE: profile.to_json()})
+    return response_fail("Email verification failed")
 
 
 @validate_headers(kwargs_=[HEADER_AUTH_TOKEN])

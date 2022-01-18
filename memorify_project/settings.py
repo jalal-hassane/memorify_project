@@ -157,3 +157,20 @@ MEDIA_ROOT_FLAGS = os.path.join(BASE_DIR, "images/flags_rounded_small/")
 MEDIA_ROOT_PP = os.path.join(BASE_DIR, "images/profile_pictures/")
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+FCM_DJANGO_SETTINGS = {
+    "APP_VERBOSE_NAME": "firebasetest_django",
+    # default: _('FCM Django')
+    "FCM_SERVER_KEY": "AAAAH8mdaxM:APA91bGwzaNxn8nUCMQOB0qZzuaEL-JCkSmw-"
+                      "jQBphyQBrRSbE3oISaOHPWMuaYL0edKAiiO1uiv6kVR0JhSnmgFW-"
+                      "3aqtJV3RQLgb_mlKOisTmslTjvZphbTgRADGrjP78y3CavxDEr",
+    # true if you want to have only one active device per registered user at a time
+    # default: False
+    "ONE_DEVICE_PER_USER": True,
+    # devices to which notifications cannot be sent,
+    # are deleted upon receiving error response from FCM
+    # default: False
+    "DELETE_INACTIVE_DEVICES": True
+}
+
+GOOGLE_OAUTH2_CLIENT_SECRETS_JSON = "clients_secret.json"

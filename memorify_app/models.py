@@ -572,3 +572,20 @@ class Contact(document.Document):
             "name": name,
             "profile_image": None,
         }
+
+
+class GoogleAuthentication(document.Document):
+    access_token = fields.StringField()
+    expires_in = fields.IntField()
+    refresh_token = fields.StringField()
+    scope = fields.StringField()
+    token_type = fields.StringField()
+
+    def to_json(self):
+        return {
+            "access_token": self.access_token,
+            "expires_in": self.expires_in,
+            "refresh_token": self.refresh_token,
+            "scope": self.scope,
+            "token_type": self.token_type,
+        }
